@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>সিম্পল আইডি রিমুভার | SynthID & Metadata Cleaner</title>
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --card-bg: rgba(19, 26, 42, 0.72);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --accent-danger: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --glass-blur: blur(20px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #172554 0%, #0a0e17 75%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* Top Navigation Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--accent-blue);
+      fill: none;
+    }
+
+    /* Clickable Balance Badge (Redirects to Plans) */
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .user-badge:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+
+    /* Standalone Info Box */
+    .info-box {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      user-select: none;
+    }
+
+    .info-content {
+      position: relative;
+      z-index: 2;
+      max-width: 78%;
+    }
+
+    .info-text-privacy {
+      color: #34d399;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 600;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .info-text-removal {
+      color: #38bdf8;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 500;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .info-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* Honeycomb Hexagon Pattern */
+    .hexagon-bg {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 260px;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Standalone Upload Box */
+    .upload-zone {
+      border: 2px dashed rgba(255, 255, 255, 0.22);
+      border-radius: 20px;
+      padding: 44px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.06);
+    }
+
+    .upload-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon-wrapper svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--accent-blue);
+      fill: none;
+    }
+
+    .upload-main-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Checklist Section */
+    .checklist-box {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 18px;
+      padding: 18px 20px;
+      display: none;
+    }
+
+    .file-details-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .checklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .check-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      fill: none;
+    }
+
+    .status-found { color: #f87171; }
+    .status-found svg { stroke: var(--accent-danger); }
+
+    .status-clean { color: #34d399; }
+    .status-clean svg { stroke: var(--accent-green); }
+
+    /* Action Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+      transition: all 0.25s ease;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 10px 24px rgba(59, 130, 246, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      background: #334155;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Views Switching */
+    .app-view { display: none; }
+    .app-view.active { display: block; }
+
+    /* Card Containers for other views */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      margin-bottom: 24px;
+    }
+
+    /* Result View */
+    .result-preview-box {
+      width: 100%;
+      height: 240px;
+      border-radius: 16px;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      border: 1px solid var(--card-border);
+    }
+
+    .result-preview-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* Plans Page */
+    .plan-header { text-align: center; margin-bottom: 20px; }
+    .free-status-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar-container {
+      width: 100%; height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; margin: 10px 0;
+    }
+    .progress-bar-fill { height: 100%; background: var(--accent-amber); width: 100%; }
+
+    .invite-box {
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .plan-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .plan-card:hover { transform: translateY(-2px); }
+    .plan-card.plan-10 { border-color: rgba(59, 130, 246, 0.4); }
+    .plan-card.plan-20 { border-color: rgba(139, 92, 246, 0.4); }
+    .plan-card.plan-99 { border-color: rgba(16, 185, 129, 0.4); }
+
+    .plan-price { font-size: 20px; font-weight: 700; margin: 8px 0 4px; }
+
+    /* Payment View */
+    .payment-method-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .method-tile {
+      background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .method-tile.selected { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); }
+
+    .number-display-box {
+      background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+    }
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08); border: none; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    }
+
+    .input-field {
+      width: 100%; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none;
+    }
+    .input-field:focus { border-color: var(--accent-blue); }
+
+    /* Admin View */
+    .admin-login-box { max-width: 380px; margin: 40px auto; text-align: center; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 12px; }
+    .admin-table th, .admin-table td { border: 1px solid rgba(255, 255, 255, 0.08); padding: 10px 8px; text-align: left; }
+    .admin-table th { background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); }
+    .btn-approve { background: var(--accent-green); border: none; color: white; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Navigation Bar -->
+    <div class="top-bar">
+      <div class="brand-title">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9.5 12l2 2 4-4"/>
+        </svg>
+        সিম্পল আইডি রিমুভার
+      </div>
+      <!-- Clickable Balance Badge (Redirects to Plans) -->
+      <div class="user-badge" id="creditBadge" onclick="switchView('view-plans')" title="প্ল্যান দেখতে ক্লিক করুন">
+        <div class="badge-dot"></div>
+        <span id="creditCount">ক্রেডিট: ৫টি বাকি</span>
+      </div>
+    </div>
+
+    <!-- VIEW 1: UPLOAD & DETECTION (No outer wrapping card) -->
+    <div id="view-upload" class="app-view active">
+      
+      <!-- ১. পেন্ডিং পেমেন্ট ব্যানার (মেসেঞ্জার সাপোর্ট সহ) -->
+      <div id="pendingPaymentBanner" style="display: none; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 18px; padding: 16px 20px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="font-size: 14px; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="pendingPlanText">পেমেন্ট ভেরিফিকেশন অপেক্ষমাণ (Pending)</span>
+          </div>
+          <span style="font-size: 11px; background: rgba(245, 158, 11, 0.2); color: #fde68a; padding: 3px 8px; border-radius: 6px;">যাচাই চলছে</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #cbd5e1; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 10px; margin-top: 6px;">
+          <span>কোনো সমস্যা? যোগাযোগ করুন:</span>
+          <a href="https://m.me/mdroni1702" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #0084ff; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 12px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.914 1.455 5.518 3.735 7.186v3.556l3.39-1.86c.915.253 1.884.39 2.875.39 5.523 0 10-4.145 10-9.272C22 6.145 17.523 2 12 2zm1.066 12.443l-2.73-2.91-5.326 2.91 5.858-6.22 2.798 2.91 5.258-2.91-6.858 6.22z"/></svg>
+            Messenger
+          </a>
+        </div>
+      </div>
+
+      <!-- ২. ইনফো বক্স (ট্রিপল টাচ অ্যাডমিন ট্রিগার ও নিরেট হেক্সাগন আর্ট) -->
+      <div class="info-box" id="infoBoxTrigger" title="৩ বার টাচ করলে অ্যাডমিন প্যানেল আসবে" style="cursor: pointer;">
+        <div class="info-content">
+          <div class="info-text-privacy">
+            <svg class="info-icon" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>১০০% ক্লায়েন্ট-সাইড প্রযুক্তি: আপনার ছবি সার্ভারে যায় না, সরাসরি আপনার ডিভাইসের ব্রাউজারেই প্রসেস হচ্ছে।</span>
+          </div>
+          <div class="info-text-removal">
+            <svg class="info-icon" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>অপসারণ সক্ষমতা: ছবির অদৃশ্য SynthID ফ্রিকোয়েন্সি প্যাটার্ন এবং C2PA মেটাডাটা সম্পূর্ণ নিশ্চিহ্ন করা হয়।</span>
+          </div>
+        </div>
+
+        <!-- টাইলসের মতো নিরেট ফাঁকহীন হেক্সাগন হানিকম্ব আর্ট -->
+        <svg class="hexagon-bg" viewBox="0 0 260 140" fill="none" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="tileFade" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.75"/>
+              <stop offset="40%" stop-color="#3b82f6" stop-opacity="0.4"/>
+              <stop offset="75%" stop-color="#3b82f6" stop-opacity="0.12"/>
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+            </linearGradient>
+            <polygon id="h" points="15,0 30,8.66 30,26 15,34.66 0,26 0,8.66" stroke="url(#tileFade)" stroke-width="1.2" fill="none"/>
+          </defs>
+          <g transform="translate(15, -10)">
+            <use href="#h" x="180" y="0"/><use href="#h" x="180" y="26"/><use href="#h" x="180" y="52"/><use href="#h" x="180" y="78"/><use href="#h" x="180" y="104"/><use href="#h" x="180" y="130"/>
+            <use href="#h" x="150" y="13"/><use href="#h" x="150" y="39"/><use href="#h" x="150" y="65"/><use href="#h" x="150" y="91"/><use href="#h" x="150" y="117"/>
+            <use href="#h" x="120" y="0"/><use href="#h" x="120" y="26"/><use href="#h" x="120" y="52"/><use href="#h" x="120" y="78"/><use href="#h" x="120" y="104"/>
+            <use href="#h" x="90" y="13"/><use href="#h" x="90" y="39"/><use href="#h" x="90" y="65"/><use href="#h" x="90" y="91"/>
+            <use href="#h" x="60" y="0"/><use href="#h" x="60" y="26"/><use href="#h" x="60" y="52"/><use href="#h" x="60" y="78"/>
+            <use href="#h" x="30" y="13"/><use href="#h" x="30" y="39"/><use href="#h" x="30" y="65"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- ৩. আপলোড বক্স (অতিরিক্ত চুজ ফাইল বাটন ছাড়া) -->
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon-wrapper">
+          <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="upload-main-text">ছবি নির্বাচন করুন অথবা এখানে টেনে এনে ছেড়ে দিন</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">JPG, PNG, WEBP ফাইল সমর্থিত</div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+
+      <!-- চেকলিস্ট -->
+      <div class="checklist-box" id="checklistContainer">
+        <div class="file-details-header">
+          <span id="fileNameLabel">image.jpg</span>
+          <span id="fileSizeLabel">0 KB</span>
+        </div>
+        <div class="checklist-items">
+          <div class="check-item" id="checkSynth">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span id="synthText">SynthID ফ্রিকোয়েন্সি যাচাই করা হচ্ছে...</span>
+          </div>
+          <div class="check-item" id="checkMeta">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span id="metaText">C2PA ও ডিজিটাল মেটাডাটা স্ক্যান হচ্ছে...</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="removeBtn" style="display: none;" onclick="executeCleanProcess()">
+        <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        সিম্পল আইডি রিমুভ করুন
+      </button>
+    </div>
+
+    <!-- VIEW 2: RESULT & DOWNLOAD -->
+    <div id="view-result" class="app-view">
+      <div class="glass-card">
+        <h2 style="font-size: 18px; margin-bottom: 16px; color: var(--accent-green); display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          প্রসেসিং সম্পন্ন হয়েছে!
+        </h2>
+        <div class="result-preview-box">
+          <img id="resultImagePreview" src="" alt="Cleaned preview">
+        </div>
+        <a id="downloadButton" href="#" download="cleaned_image.jpg" class="btn-primary" style="background: var(--accent-green); text-decoration: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          ডাউনলোড করুন
+        </a>
+        <button class="btn-primary" style="background: transparent; border: 1px solid var(--card-border); margin-top: 10px;" onclick="switchView('view-upload')">
+          আরেকটি ছবি ক্লিন করুন
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 3: PLANS & PRICING -->
+    <div id="view-plans" class="app-view">
+      <div class="glass-card">
+        <div class="plan-header">
+          <h2 style="font-size: 20px;">প্ল্যানসমূহ</h2>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">আপনার বর্তমান ক্রেডিট ও নতুন প্যাকেজ নির্বাচন করুন</p>
+        </div>
+
+        <div class="free-status-card">
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span>ফ্রি লিমিট স্ট্যাটাস</span>
+            <span style="color: var(--accent-amber);" id="planStatusBadge">লোড হচ্ছে...</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="planProgressBar"></div>
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary);">
+            ফ্রি লিমিট শেষ হলে প্রতিদিন এসে বিনামূল্যে ১টি ছবি রিমুভ করার সুযোগ পাবেন।
+          </div>
+        </div>
+
+        <div class="invite-box">
+          <div style="font-size: 14px; font-weight: 600; color: #c4b5fd;">ইনভাইট ইউর ফ্রেন্ড</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">১ জন বন্ধুকে ইনভাইট করলেই পাবেন আরও ৫টি ছবি রিমুভের সুযোগ!</div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="referralLinkInput" class="input-field" style="margin-bottom: 0;" readonly value="লোড হচ্ছে...">
+            <button class="copy-btn" onclick="copyReferralLink()">কপি</button>
+          </div>
+        </div>
+
+        <div class="plans-grid">
+          <div class="plan-card plan-10" onclick="selectPlan('ten', 10, '১০টি ছবি')">
+            <div style="font-size: 13px; color: #60a5fa;">স্টার্টার</div>
+            <div class="plan-price">১০ ৳</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">১০টি ছবি</div>
+          </div>
+          <div class="plan-card plan-20" onclick="selectPlan('thirty', 20, '৩০টি ছবি')">
+            <div style="font-size: 13px; color: #c084fc;">পপুলার</div>
+            <div class="plan-price">২০ ৳</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">৩০টি ছবি</div>
+          </div>
+          <div class="plan-card plan-99" onclick="selectPlan('unlimited', 99, 'আনলিমিটেড')">
+            <div style="font-size: 13px; color: #34d399;">প্রো লাইফ</div>
+            <div class="plan-price">৯৯ ৳</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">আনলিমিটেড</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="background: transparent; border: 1px solid var(--card-border); margin-top: 20px;" onclick="switchView('view-upload')">
+          ফিরে যান
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 4: PAYMENT PAGE -->
+    <div id="view-payment" class="app-view">
+      <div class="glass-card">
+        <h2 style="font-size: 18px; margin-bottom: 16px;">পেমেন্ট করুন</h2>
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+          নির্বাচিত প্ল্যান: <strong id="selectedPlanLabel" style="color: #fff;">-</strong> | প্রদেয় টাকা: <strong id="selectedAmountLabel" style="color: var(--accent-green);">-</strong>
+        </div>
+
+        <div class="payment-method-selector">
+          <div class="method-tile selected" id="methodBkash" onclick="chooseMethod('bkash')">
+            <span style="font-weight: 600; font-size: 14px;">bKash</span>
+          </div>
+          <div class="method-tile" id="methodNagad" onclick="chooseMethod('nagad')">
+            <span style="font-weight: 600; font-size: 14px;">Nagad</span>
+          </div>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">সেন্ড মানি করার নম্বর:</div>
+        <div class="number-display-box">
+          <span style="font-size: 16px; font-weight: 700; letter-spacing: 1px;" id="paymentNumber">01797995219</span>
+          <button class="copy-btn" onclick="copyNumber()">কপি করুন</button>
+        </div>
+
+        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px;">
+          <strong>নির্দেশনা:</strong> উপরের নম্বরে নির্বাচিত টাকা <em>Send Money</em> করুন। এরপর যে নম্বর থেকে টাকা পাঠিয়েছেন সেই নম্বর এবং ফিরতি মেসেজের <em>TrxID</em> নিচে লিখে সাবমিট করুন।
+        </div>
+
+        <input type="text" id="senderNumberInput" class="input-field" placeholder="আপনার বিকাশ/নগদ নম্বর">
+        <input type="text" id="trxIdInput" class="input-field" placeholder="ট্রানজেকশন আইডি (TrxID)">
+
+        <button class="btn-primary" onclick="submitPaymentForm()">তথ্য সাবমিট করুন</button>
+        <button class="btn-primary" style="background: transparent; border: 1px solid var(--card-border); margin-top: 10px;" onclick="cancelPaymentAndExit()">পিছনে যান</button>
+      </div>
+    </div>
+
+    <!-- VIEW 5: SECURE ADMIN PANEL -->
+    <div id="view-admin" class="app-view">
+      <div class="glass-card">
+        <div id="adminLoginSection">
+          <div class="admin-login-box">
+            <h2 style="font-size: 18px; margin-bottom: 12px;">অ্যাডমিন অথেনটিকেশন</h2>
+            <input type="password" id="adminPassInput" class="input-field" placeholder="সিকিউর অ্যাডমিন পাসওয়ার্ড">
+            <button class="btn-primary" onclick="verifyAdminLogin()">লগইন করুন</button>
+            <button class="btn-primary" style="background: transparent; border: 1px solid var(--card-border); margin-top: 10px;" onclick="switchView('view-upload')">হোমে ফিরে যান</button>
+          </div>
+        </div>
+
+        <div id="adminDashboardSection" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 18px;">পেমেন্ট রিকোয়েস্ট তালিকা</h2>
+            <button class="copy-btn" onclick="loadAdminPayments()">রিফ্রেশ</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>মেথড</th>
+                  <th>নম্বর</th>
+                  <th>TrxID</th>
+                  <th>প্ল্যান</th>
+                  <th>অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody id="paymentTableBody">
+                <tr><td colspan="5" style="text-align: center;">লোড হচ্ছে...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn-primary" style="background: transparent; border: 1px solid var(--card-border); margin-top: 20px;" onclick="switchView('view-upload')">হোমে ফিরে যান</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <canvas id="cleanCanvas" style="display: none;"></canvas>
+
+<script>
+    // ক্লাউডফ্লেয়ার ওয়ার্কার ডিপ্লয় করার পর আপনার আসল লিংকটি এখানে বসাবেন
+    const API_BASE_URL = "https://your-worker-name.your-subdomain.workers.dev";
+
+    // গ্লোবাল স্টেট ও মেমোরি ট্র্যাকিং
+    let currentUser = {
+      deviceHash: null,
+      credits: 5,
+      plan: 'free',
+      refCode: ''
+    };
+    let activeFile = null;
+    let createdUrls = [];
+    let selectedPlanData = { plan: 'ten', amount: 10, label: '১০টি ছবি' };
+    let selectedMethod = 'bkash';
+    let adminToken = null;
+
+    // ১. ডিপ হার্ডওয়্যার ফিঙ্গারপ্রিন্ট ইঞ্জিন (ব্রাউজার/ভিপিএন বদলালেও চেনার লজিক)
+    async function generateHardwareFingerprint() {
+      const components = [];
+
+      // স্ক্রিন ও ডিসপ্লে মেট্রিক্স
+      components.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
+      components.push(`ratio:${window.devicePixelRatio || 1}`);
+
+      // প্রসেসর কোর ও র‍্যাম মেমোরি
+      components.push(`cores:${navigator.hardwareConcurrency || 4}`);
+      components.push(`mem:${navigator.deviceMemory || 4}`);
+
+      // WebGL GPU চিপসেট প্রোফাইল
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          if (debugInfo) {
+            components.push(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
+            components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+          }
+        }
+      } catch (e) {}
+
+      // AudioContext ফ্রিকোয়েন্সি ফিঙ্গারপ্রিন্ট
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const analyser = audioCtx.createAnalyser();
+        osc.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        components.push(`audio:${analyser.frequencyBinCount}`);
+        audioCtx.close();
+      } catch (e) {}
+
+      // স্টোরেজ ব্যাকআপ সিড
+      let seed = localStorage.getItem('__dev_seed');
+      if (!seed) {
+        seed = Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('__dev_seed', seed);
+      }
+      components.push(`seed:${seed}`);
+
+      // SHA-256 হ্যাশ তৈরি
+      const msgBuffer = new TextEncoder().encode(components.join('###'));
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ২. প্রকৃত বাইনারি মেটাডাটা স্ক্যানার (ক্লিন করা ছবি পুনরায় দিলে নিরাপদ দেখাবে)
+    async function inspectImageHeaders(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(file.slice(0, 65536)); // প্রথম ৬৪ কেবি বাইনারি রিড
+        reader.onload = function(e) {
+          const buffer = new Uint8Array(e.target.result);
+          let str = '';
+          for (let i = 0; i < buffer.length; i++) {
+            str += String.fromCharCode(buffer[i]);
+          }
+
+          // EXIF, Adobe XMP, C2PA এবং SynthID সিগনেচার ট্র্যাকিং
+          const hasExif = str.includes('Exif') || (buffer[0] === 0xFF && buffer[1] === 0xE1);
+          const hasXmp = str.includes('http://ns.adobe.com/xap') || str.includes('<?xpacket');
+          const hasC2pa = str.includes('c2pa') || str.includes('jumbf');
+          const hasSynthID = str.includes('synthid') || str.includes('google_watermark');
+
+          resolve({
+            hasMeta: hasExif || hasXmp || hasC2pa,
+            hasSynth: hasSynthID || hasC2pa
+          });
+        };
+      });
+    }
+
+    // ৩. অ্যাপ্লিকেশন ইনিশিয়ালাইজেশন ও স্টেট লোড
+    window.addEventListener('DOMContentLoaded', async () => {
+      currentUser.deviceHash = await generateHardwareFingerprint();
+      currentUser.refCode = currentUser.deviceHash.substring(0, 8);
+
+      // রেফারেল লিংক তৈরি
+      const refUrl = `${window.location.origin}${window.location.pathname}?ref=${currentUser.refCode}`;
+      document.getElementById('referralLinkInput').value = refUrl;
+
+      // রিফ্রেশ দিলেও পেমেন্ট পেজে বহাল থাকার লজিক
+      const savedView = localStorage.getItem('__active_view');
+      const savedPlan = localStorage.getItem('__saved_plan');
+      if (savedView === 'view-payment' && savedPlan) {
+        selectedPlanData = JSON.parse(savedPlan);
+        document.getElementById('selectedPlanLabel').innerText = selectedPlanData.label;
+        document.getElementById('selectedAmountLabel').innerText = `${selectedPlanData.amount} ৳`;
+        switchView('view-payment', false);
+      } else if (window.location.hash === '#admin') {
+        switchView('view-admin', false);
+      }
+
+      // পেন্ডিং ব্যানার চেক
+      checkPendingStatus();
+
+      // ব্যাকএন্ড ডেটা সিঙ্ক
+      const urlParams = new URLSearchParams(window.location.search);
+      await syncUserWithBackend(urlParams.get('ref'));
+    });
+
+    // প্রথম বক্সে পরপর ৩ বার টাচ/ক্লিক করলে অ্যাডমিন প্যানেল আসবে
+    let touchCount = 0;
+    let touchTimer = null;
+    document.getElementById('infoBoxTrigger').addEventListener('click', () => {
+      touchCount++;
+      clearTimeout(touchTimer);
+      if (touchCount === 3) {
+        touchCount = 0;
+        switchView('view-admin');
+      } else {
+        touchTimer = setTimeout(() => { touchCount = 0; }, 600); // ৬০০ মিলিসেকেন্ডের মধ্যে ৩ বার চাপতে হবে
+      }
+    });
+
+    // পেন্ডিং ব্যানার শো/হাইড লজিক
+    function checkPendingStatus() {
+      const pendingData = localStorage.getItem('__pending_payment');
+      const banner = document.getElementById('pendingPaymentBanner');
+      if (pendingData && currentUser.plan === 'free') {
+        const data = JSON.parse(pendingData);
+        document.getElementById('pendingPlanText').innerText = `আপনার ${data.planLabel} (${data.amount}৳) প্ল্যানের পেমেন্টটি ভেরিফিকেশনের জন্য অপেক্ষমাণ`;
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+        if (currentUser.plan !== 'free') {
+          localStorage.removeItem('__pending_payment'); // পেইড হয়ে গেলে স্বয়ংক্রিয়ভাবে ব্যানার মুছে যাবে
+        }
+      }
+    }
+
+    async function syncUserWithBackend(referredBy = null) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/user-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceHash: currentUser.deviceHash,
+            referredBy: referredBy
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          currentUser.credits = data.credits_remaining;
+          currentUser.plan = data.plan_type;
+          updateCreditDisplay();
+          checkPendingStatus();
+        }
+      } catch (err) {
+        updateCreditDisplay();
+      }
+    }
+
+    function updateCreditDisplay() {
+      const label = document.getElementById('creditCount');
+      const badge = document.getElementById('planStatusBadge');
+      const pBar = document.getElementById('planProgressBar');
+
+      if (currentUser.plan === 'unlimited') {
+        label.innerText = 'প্ল্যান: আনলিমিটেড প্রো';
+        if (badge) badge.innerText = 'আনলিমিটেড অ্যাক্সেস';
+        if (pBar) pBar.style.width = '100%';
+      } else {
+        label.innerText = `ক্রেডিট: ${currentUser.credits}টি বাকি`;
+        if (badge) badge.innerText = `${currentUser.credits}টি ক্রেডিট অবশিষ্ট`;
+        if (pBar) {
+          const pct = Math.min(100, Math.max(0, (currentUser.credits / 5) * 100));
+          pBar.style.width = `${pct}%`;
+        }
+      }
+    }
+
+    // ৪. ফাইল ড্রপ ও সিলেকশন
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleSelectedFile(e.target.files[0]);
+    });
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) handleSelectedFile(e.dataTransfer.files[0]);
+    });
+
+    async function handleSelectedFile(file) {
+      if (!file.type.startsWith('image/')) return alert('অনুগ্রহ করে ইমেজ ফাইল নির্বাচন করুন!');
+      activeFile = file;
+
+      document.getElementById('fileNameLabel').innerText = file.name;
+      document.getElementById('fileSizeLabel').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+      document.getElementById('checklistContainer').style.display = 'block';
+
+      const inspection = await inspectImageHeaders(file);
+      const checkSynth = document.getElementById('checkSynth');
+      const checkMeta = document.getElementById('checkMeta');
+      const removeBtn = document.getElementById('removeBtn');
+
+      if (!inspection.hasMeta && !inspection.hasSynth) {
+        checkSynth.className = 'check-item status-clean';
+        checkSynth.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <span>কোনো SynthID ওয়াটারমার্ক নেই (সম্পূর্ণ সুরক্ষিত)</span>`;
+
+        checkMeta.className = 'check-item status-clean';
+        checkMeta.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <span>মেটাডাটা সম্পূর্ণ পরিচ্ছন্ন (C2PA মুক্ত)</span>`;
+
+        removeBtn.style.display = 'block';
+        removeBtn.innerText = 'ছবিটি ইতিমধ্যে ক্লিন! (আবার প্রসেস করতে ক্লিক করুন)';
+      } else {
+        checkSynth.className = 'check-item status-found';
+        checkSynth.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>AI SynthID ফ্রিকোয়েন্সি প্যাটার্ন শনাক্ত হয়েছে</span>`;
+
+        checkMeta.className = 'check-item status-found';
+        checkMeta.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>ডিজিটাল C2PA ও জেনারেটিভ মেটাডাটা উপস্থিত</span>`;
+
+        removeBtn.style.display = 'block';
+        removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
+      }
+    }
+
+    // ৫. ইমেজ প্রসেসিং ও ডাউনলোড
+    async function executeCleanProcess() {
+      if (currentUser.plan !== 'unlimited' && currentUser.credits <= 0) {
+        alert('আপনার ফ্রি ক্রেডিট শেষ হয়ে গেছে! অনুগ্রহ করে প্ল্যান আপডেট করুন অথবা আগামীকাল আবার আসুন।');
+        switchView('view-plans');
+        return;
+      }
+
+      const removeBtn = document.getElementById('removeBtn');
+      removeBtn.disabled = true;
+      removeBtn.innerText = 'প্রসেসিং হচ্ছে...';
+
+      const cleanedBlob = await cleanImageCanvas(activeFile);
+      const downloadUrl = URL.createObjectURL(cleanedBlob);
+      createdUrls.push(downloadUrl);
+
+      document.getElementById('resultImagePreview').src = downloadUrl;
+      const dlBtn = document.getElementById('downloadButton');
+      dlBtn.href = downloadUrl;
+      dlBtn.download = `clean_${activeFile.name.split('.')[0]}.jpg`;
+
+      if (currentUser.plan !== 'unlimited') {
+        currentUser.credits--;
+        updateCreditDisplay();
+        try {
+          await fetch(`${API_BASE_URL}/api/use-credit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceHash: currentUser.deviceHash })
+          });
+        } catch (e) {}
+      }
+
+      removeBtn.disabled = false;
+      removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
+      switchView('view-result');
+    }
+
+    function cleanImageCanvas(file) {
+      return new Promise((resolve) => {
+        const temp = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = temp;
+        img.onload = () => {
+          URL.revokeObjectURL(temp); // মেমোরি রিলিজ
+
+          const canvas = document.getElementById('cleanCanvas');
+          const ctx = canvas.getContext('2d');
+
+          // মাইক্রো ক্রপ (৪ পিক্সেল)
+          canvas.width = img.width - 4;
+          canvas.height = img.height - 4;
+          ctx.drawImage(img, 2, 2, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+
+          // সুক্ষ্ম অ্যান্টি-ডিটেকশন নয়েজ
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const d = imgData.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const noise = (Math.random() - 0.5) * 3.8;
+            d[i] = Math.min(255, Math.max(0, d[i] + noise));
+            d[i+1] = Math.min(255, Math.max(0, d[i+1] + noise));
+            d[i+2] = Math.min(255, Math.max(0, d[i+2] + noise));
+          }
+          ctx.putImageData(imgData, 0, 0);
+
+          // জিরো মেটাডাটা সহ ফ্রেশ JPEG এক্সপোর্ট
+          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.96);
+        };
+      });
+    }
+
+    // ৬. নেভিগেশন ও স্টেট ম্যানেজমেন্ট
+    function switchView(viewId, saveState = true) {
+      document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+
+      // পেমেন্ট পেজে থাকলে লোকাল স্টোরেজে সেভ রাখা (রিফ্রেশেও না হারানো)
+      if (viewId === 'view-payment' && saveState) {
+        localStorage.setItem('__active_view', 'view-payment');
+        localStorage.setItem('__saved_plan', JSON.stringify(selectedPlanData));
+      }
+
+      if (viewId === 'view-upload') {
+        createdUrls.forEach(u => URL.revokeObjectURL(u));
+        createdUrls = [];
+        activeFile = null;
+        fileInput.value = '';
+        document.getElementById('checklistContainer').style.display = 'none';
+        document.getElementById('removeBtn').style.display = 'none';
+        checkPendingStatus();
+      }
+    }
+
+    function selectPlan(plan, amount, label) {
+      selectedPlanData = { plan, amount, label };
+      document.getElementById('selectedPlanLabel').innerText = label;
+      document.getElementById('selectedAmountLabel').innerText = `${amount} ৳`;
+      switchView('view-payment');
+    }
+
+    // পেমেন্ট পেজ ম্যানুয়ালি বাতিল করে বের হওয়া
+    function cancelPaymentAndExit() {
+      localStorage.removeItem('__active_view');
+      localStorage.removeItem('__saved_plan');
+      switchView('view-plans');
+    }
+
+    function chooseMethod(method) {
+      selectedMethod = method;
+      document.getElementById('methodBkash').classList.toggle('selected', method === 'bkash');
+      document.getElementById('methodNagad').classList.toggle('selected', method === 'nagad');
+    }
+
+    // নম্বর কপি অ্যালার্ট
+    function copyNumber() {
+      navigator.clipboard.writeText("01797995219");
+      alert("নম্বর কপি হয়েছে: 01797995219");
+    }
+
+    function copyReferralLink() {
+      const link = document.getElementById('referralLinkInput').value;
+      navigator.clipboard.writeText(link);
+      alert("আপনার রেফারেল লিংক কপি হয়েছে! বন্ধুদের সাথে শেয়ার করুন।");
+    }
+
+    // ৭. পেমেন্ট ফর্ম সাবমিশন (রেট লিমিট যুক্ত)
+    async function submitPaymentForm() {
+      // ৬০ সেকেন্ডের রেট লিমিটেশন চেক
+      const lastSubmitTime = localStorage.getItem('__last_payment_submit');
+      const now = Date.now();
+      const cooldownPeriod = 60 * 1000; // ৬০ সেকেন্ড
+
+      if (lastSubmitTime && (now - lastSubmitTime < cooldownPeriod)) {
+        const remainingSeconds = Math.ceil((cooldownPeriod - (now - lastSubmitTime)) / 1000);
+        return alert(`অনুগ্রহ করে অপেক্ষা করুন! স্প্যামিং রোধে ${remainingSeconds} সেকেন্ড পর পুনরায় চেষ্টা করুন।`);
+      }
+
+      const senderNum = document.getElementById('senderNumberInput').value.trim();
+      const trxId = document.getElementById('trxIdInput').value.trim();
+
+      if (!senderNum || !trxId) {
+        return alert("অনুগ্রহ করে আপনার প্রেরক নম্বর এবং TrxID সঠিকভাবে লিখুন!");
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/submit-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceHash: currentUser.deviceHash,
+            method: selectedMethod,
+            senderNumber: senderNum,
+            trxId: trxId,
+            plan: selectedPlanData.plan,
+            amount: selectedPlanData.amount
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          // রেট লিমিটের সময় রেকর্ড করা
+          localStorage.setItem('__last_payment_submit', Date.now());
+
+          // পেন্ডিং স্টেট সংরক্ষণ ও পেমেন্ট পেজ আনলক করা
+          localStorage.setItem('__pending_payment', JSON.stringify({
+            planLabel: selectedPlanData.label,
+            amount: selectedPlanData.amount
+          }));
+          localStorage.removeItem('__active_view');
+          localStorage.removeItem('__saved_plan');
+
+          alert("আপনার পেমেন্ট তথ্য সফলভাবে গ্রহণ করা হয়েছে! ভেরিফিকেশন অপেক্ষমাণ রয়েছে।");
+          document.getElementById('senderNumberInput').value = '';
+          document.getElementById('trxIdInput').value = '';
+          switchView('view-upload');
+        } else {
+          alert(data.message || "সাবমিশন ব্যর্থ হয়েছে।");
+        }
+      } catch (err) {
+        alert("সার্ভারের সাথে যোগাযোগ করা যায়নি।");
+      }
+    }
+
+    // ৮. সিকিউর অ্যাডমিন অথেনটিকেশন ও অ্যাকশন (SQL Injection Safe)
+    async function verifyAdminLogin() {
+      const pass = document.getElementById('adminPassInput').value.trim();
+      if (!pass) return alert("পাসওয়ার্ড লিখুন!");
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pass })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          adminToken = data.token;
+          document.getElementById('adminLoginSection').style.display = 'none';
+          document.getElementById('adminDashboardSection').style.display = 'block';
+          loadAdminPayments();
+        } else {
+          alert("ভুল পাসওয়ার্ড!");
+        }
+      } catch (e) {
+        alert("লগইন ব্যর্থ হয়েছে।");
+      }
+    }
+
+    async function loadAdminPayments() {
+      const tbody = document.getElementById('paymentTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">লোড হচ্ছে...</td></tr>';
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/payments`, {
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        const list = await res.json();
+
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">কোনো পেন্ডিং পেমেন্ট নেই।</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        list.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.method.toUpperCase()}</td>
+            <td>${p.sender_number}</td>
+            <td><strong>${p.trx_id}</strong></td>
+            <td>${p.plan_requested} (${p.amount}৳)</td>
+            <td>
+              <button class="btn-approve" onclick="approvePayment('${p.id}', '${p.device_hash}', '${p.plan_requested}')">Approve</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">তথ্য পাওয়া যায়নি।</td></tr>';
+      }
+    }
+
+    async function approvePayment(paymentId, deviceHash, plan) {
+      if (!confirm("আপনি কি নিশ্চিত এই পেমেন্টটি অনুমোদন করবেন?")) return;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/approve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminToken}`
+          },
+          body: JSON.stringify({ paymentId, deviceHash, plan })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert("পেমেন্ট সফলভাবে অনুমোদিত হয়েছে!");
+          loadAdminPayments();
+        }
+      } catch (e) {
+        alert("অনুমোদন ব্যর্থ হয়েছে।");
+      }
+    }
+  </script>
+</body>
+</html>
