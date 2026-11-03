@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>সিম্পল আইডি রিমুভার | SynthID & Metadata Cleaner</title>
+  <title> SynthID & Metadata Cleaner</title>
   <style>
     :root {
       --bg-dark: #0a0e17;
@@ -412,7 +412,7 @@
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           <path d="M9.5 12l2 2 4-4"/>
         </svg>
-        সিম্পল আইডি রিমুভার
+        SynthID Remover
       </div>
       <!-- Clickable Balance Badge (Redirects to Plans) -->
       <div class="user-badge" id="creditBadge" onclick="switchView('view-plans')" title="প্ল্যান দেখতে ক্লিক করুন">
@@ -447,11 +447,11 @@
         <div class="info-content">
           <div class="info-text-privacy">
             <svg class="info-icon" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>১০০% ক্লায়েন্ট-সাইড প্রযুক্তি: আপনার ছবি সার্ভারে যায় না, সরাসরি আপনার ডিভাইসের ব্রাউজারেই প্রসেস হচ্ছে।</span>
+            <span>আপনার ছবি কোনো সার্ভারে যায় না, সরাসরি আপনার ডিভাইসের ব্রাউজারেই প্রসেস হচ্ছে।</span>
           </div>
           <div class="info-text-removal">
             <svg class="info-icon" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>অপসারণ সক্ষমতা: ছবির অদৃশ্য SynthID ফ্রিকোয়েন্সি প্যাটার্ন এবং C2PA মেটাডাটা সম্পূর্ণ নিশ্চিহ্ন করা হয়।</span>
+            <span>ছবির অদৃশ্য SynthID ফ্রিকোয়েন্সি প্যাটার্ন এবং C2PA মেটাডাটা সম্পূর্ণ নিশ্চিহ্ন করা হয়।</span>
           </div>
         </div>
 
@@ -500,18 +500,18 @@
         <div class="checklist-items">
           <div class="check-item" id="checkSynth">
             <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-            <span id="synthText">SynthID ফ্রিকোয়েন্সি যাচাই করা হচ্ছে...</span>
+            <span id="synthText">SynthID </span>
           </div>
           <div class="check-item" id="checkMeta">
             <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
-            <span id="metaText">C2PA ও ডিজিটাল মেটাডাটা স্ক্যান হচ্ছে...</span>
+            <span id="metaText">C2PA ও ডিজিটাল মেটাডেটা</span>
           </div>
         </div>
       </div>
 
       <button class="btn-primary" id="removeBtn" style="display: none;" onclick="executeCleanProcess()">
         <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        সিম্পল আইডি রিমুভ করুন
+        Remove SynthID
       </button>
     </div>
 
@@ -520,17 +520,17 @@
       <div class="glass-card">
         <h2 style="font-size: 18px; margin-bottom: 16px; color: var(--accent-green); display: flex; align-items: center; gap: 8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          প্রসেসিং সম্পন্ন হয়েছে!
+          Pressing Complete
         </h2>
         <div class="result-preview-box">
           <img id="resultImagePreview" src="" alt="Cleaned preview">
         </div>
         <a id="downloadButton" href="#" download="cleaned_image.jpg" class="btn-primary" style="background: var(--accent-green); text-decoration: none;">
           <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          ডাউনলোড করুন
+          Download
         </a>
         <button class="btn-primary" style="background: transparent; border: 1px solid var(--card-border); margin-top: 10px;" onclick="switchView('view-upload')">
-          আরেকটি ছবি ক্লিন করুন
+         Remove SynthID an others photo
         </button>
       </div>
     </div>
@@ -668,7 +668,7 @@
 
 <script>
     // ক্লাউডফ্লেয়ার ওয়ার্কার ডিপ্লয় করার পর আপনার আসল লিংকটি এখানে বসাবেন
-    const API_BASE_URL = "https://your-worker-name.your-subdomain.workers.dev";
+    const API_BASE_URL = "synthid.mdroni5219.workers.dev";
 
     // গ্লোবাল স্টেট ও মেমোরি ট্র্যাকিং
     let currentUser = {
