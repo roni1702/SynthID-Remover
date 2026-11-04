@@ -667,7 +667,7 @@
   <canvas id="cleanCanvas" style="display: none;"></canvas>
 
 <script>
-    // ক্লাউডফ্লেয়ার ওয়ার্কার ডিপ্লয় করার পর আপনার আসল লিংকটি এখানে বসাবেন
+    // ক্লাউডফ্লেয়ার ওয়ার্কারের লিংক (ডিপ্লয় করার পর আপনার লিংক এখানে বসাবেন)
     const API_BASE_URL = "synthid.mdroni5219.workers.dev";
 
     // গ্লোবাল স্টেট ও মেমোরি ট্র্যাকিং
@@ -683,19 +683,14 @@
     let selectedMethod = 'bkash';
     let adminToken = null;
 
-    // ১. ডিপ হার্ডওয়্যার ফিঙ্গারপ্রিন্ট ইঞ্জিন (ব্রাউজার/ভিপিএন বদলালেও চেনার লজিক)
+    // ১. ডিপ হার্ডওয়্যার ফিঙ্গারপ্রিন্ট ইঞ্জিন (ভিপিএন বা ব্রাউজার বদলালেও চেনার লজিক)
     async function generateHardwareFingerprint() {
       const components = [];
-
-      // স্ক্রিন ও ডিসপ্লে মেট্রিক্স
       components.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
       components.push(`ratio:${window.devicePixelRatio || 1}`);
-
-      // প্রসেসর কোর ও র‍্যাম মেমোরি
       components.push(`cores:${navigator.hardwareConcurrency || 4}`);
       components.push(`mem:${navigator.deviceMemory || 4}`);
 
-      // WebGL GPU চিপসেট প্রোফাইল
       try {
         const canvas = document.createElement('canvas');
         const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -708,7 +703,6 @@
         }
       } catch (e) {}
 
-      // AudioContext ফ্রিকোয়েন্সি ফিঙ্গারপ্রিন্ট
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
@@ -719,7 +713,6 @@
         audioCtx.close();
       } catch (e) {}
 
-      // স্টোরেজ ব্যাকআপ সিড
       let seed = localStorage.getItem('__dev_seed');
       if (!seed) {
         seed = Math.random().toString(36).substring(2, 15);
@@ -727,48 +720,52 @@
       }
       components.push(`seed:${seed}`);
 
-      // SHA-256 হ্যাশ তৈরি
       const msgBuffer = new TextEncoder().encode(components.join('###'));
       const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
       return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ২. প্রকৃত বাইনারি মেটাডাটা স্ক্যানার (ক্লিন করা ছবি পুনরায় দিলে নিরাপদ দেখাবে)
+    // ২. অপটিমাইজড ও ফেইল-সেফ বাইনারি স্ক্যানার (কখনো হ্যাং করবে না)
     async function inspectImageHeaders(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.readAsArrayBuffer(file.slice(0, 65536)); // প্রথম ৬৪ কেবি বাইনারি রিড
+        reader.readAsArrayBuffer(file.slice(0, 32768)); // প্রথম ৩২ কেবি দ্রুত রিড
+        
         reader.onload = function(e) {
-          const buffer = new Uint8Array(e.target.result);
-          let str = '';
-          for (let i = 0; i < buffer.length; i++) {
-            str += String.fromCharCode(buffer[i]);
+          try {
+            const buffer = new Uint8Array(e.target.result);
+            const decoder = new TextDecoder('latin1');
+            const str = decoder.decode(buffer);
+
+            const hasExif = str.includes('Exif') || (buffer[0] === 0xFF && buffer[1] === 0xE1);
+            const hasXmp = str.includes('http://ns.adobe.com') || str.includes('<?xpacket');
+            const hasC2pa = str.includes('c2pa') || str.includes('jumbf');
+            const hasSynthID = str.includes('synthid') || str.includes('google_watermark');
+
+            resolve({
+              hasMeta: hasExif || hasXmp || hasC2pa,
+              hasSynth: hasSynthID || hasC2pa
+            });
+          } catch (err) {
+            resolve({ hasMeta: true, hasSynth: true });
           }
+        };
 
-          // EXIF, Adobe XMP, C2PA এবং SynthID সিগনেচার ট্র্যাকিং
-          const hasExif = str.includes('Exif') || (buffer[0] === 0xFF && buffer[1] === 0xE1);
-          const hasXmp = str.includes('http://ns.adobe.com/xap') || str.includes('<?xpacket');
-          const hasC2pa = str.includes('c2pa') || str.includes('jumbf');
-          const hasSynthID = str.includes('synthid') || str.includes('google_watermark');
-
-          resolve({
-            hasMeta: hasExif || hasXmp || hasC2pa,
-            hasSynth: hasSynthID || hasC2pa
-          });
+        reader.onerror = function() {
+          resolve({ hasMeta: true, hasSynth: true });
         };
       });
     }
 
-    // ৩. অ্যাপ্লিকেশন ইনিশিয়ালাইজেশন ও স্টেট লোড
+    // ৩. ইনিশিয়ালাইজেশন ও স্টেট লোড
     window.addEventListener('DOMContentLoaded', async () => {
       currentUser.deviceHash = await generateHardwareFingerprint();
       currentUser.refCode = currentUser.deviceHash.substring(0, 8);
 
-      // রেফারেল লিংক তৈরি
       const refUrl = `${window.location.origin}${window.location.pathname}?ref=${currentUser.refCode}`;
       document.getElementById('referralLinkInput').value = refUrl;
 
-      // রিফ্রেশ দিলেও পেমেন্ট পেজে বহাল থাকার লজিক
+      // রিফ্রেশ দিলেও পেমেন্ট পেজে বহাল থাকা
       const savedView = localStorage.getItem('__active_view');
       const savedPlan = localStorage.getItem('__saved_plan');
       if (savedView === 'view-payment' && savedPlan) {
@@ -780,32 +777,34 @@
         switchView('view-admin', false);
       }
 
-      // পেন্ডিং ব্যানার চেক
       checkPendingStatus();
 
-      // ব্যাকএন্ড ডেটা সিঙ্ক
       const urlParams = new URLSearchParams(window.location.search);
       await syncUserWithBackend(urlParams.get('ref'));
     });
 
-    // প্রথম বক্সে পরপর ৩ বার টাচ/ক্লিক করলে অ্যাডমিন প্যানেল আসবে
+    // প্রথম বক্সে পরপর ৩ বার টাচ করলে অ্যাডমিন প্যানেল আসবে
     let touchCount = 0;
     let touchTimer = null;
-    document.getElementById('infoBoxTrigger').addEventListener('click', () => {
-      touchCount++;
-      clearTimeout(touchTimer);
-      if (touchCount === 3) {
-        touchCount = 0;
-        switchView('view-admin');
-      } else {
-        touchTimer = setTimeout(() => { touchCount = 0; }, 600); // ৬০০ মিলিসেকেন্ডের মধ্যে ৩ বার চাপতে হবে
-      }
-    });
+    const triggerEl = document.getElementById('infoBoxTrigger');
+    if (triggerEl) {
+      triggerEl.addEventListener('click', () => {
+        touchCount++;
+        clearTimeout(touchTimer);
+        if (touchCount === 3) {
+          touchCount = 0;
+          switchView('view-admin');
+        } else {
+          touchTimer = setTimeout(() => { touchCount = 0; }, 600);
+        }
+      });
+    }
 
     // পেন্ডিং ব্যানার শো/হাইড লজিক
     function checkPendingStatus() {
       const pendingData = localStorage.getItem('__pending_payment');
       const banner = document.getElementById('pendingPaymentBanner');
+      if (!banner) return;
       if (pendingData && currentUser.plan === 'free') {
         const data = JSON.parse(pendingData);
         document.getElementById('pendingPlanText').innerText = `আপনার ${data.planLabel} (${data.amount}৳) প্ল্যানের পেমেন্টটি ভেরিফিকেশনের জন্য অপেক্ষমাণ`;
@@ -813,7 +812,7 @@
       } else {
         banner.style.display = 'none';
         if (currentUser.plan !== 'free') {
-          localStorage.removeItem('__pending_payment'); // পেইড হয়ে গেলে স্বয়ংক্রিয়ভাবে ব্যানার মুছে যাবে
+          localStorage.removeItem('__pending_payment');
         }
       }
     }
@@ -846,11 +845,11 @@
       const pBar = document.getElementById('planProgressBar');
 
       if (currentUser.plan === 'unlimited') {
-        label.innerText = 'প্ল্যান: আনলিমিটেড প্রো';
+        if (label) label.innerText = 'প্ল্যান: আনলিমিটেড প্রো';
         if (badge) badge.innerText = 'আনলিমিটেড অ্যাক্সেস';
         if (pBar) pBar.style.width = '100%';
       } else {
-        label.innerText = `ক্রেডিট: ${currentUser.credits}টি বাকি`;
+        if (label) label.innerText = `ক্রেডিট: ${currentUser.credits}টি বাকি`;
         if (badge) badge.innerText = `${currentUser.credits}টি ক্রেডিট অবশিষ্ট`;
         if (pBar) {
           const pct = Math.min(100, Math.max(0, (currentUser.credits / 5) * 100));
@@ -863,49 +862,62 @@
     const fileInput = document.getElementById('fileInput');
     const dropZone = document.getElementById('dropZone');
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) handleSelectedFile(e.target.files[0]);
-    });
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleSelectedFile(e.target.files[0]);
+      });
+    }
 
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) handleSelectedFile(e.dataTransfer.files[0]);
-    });
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) handleSelectedFile(e.dataTransfer.files[0]);
+      });
+    }
 
     async function handleSelectedFile(file) {
-      if (!file.type.startsWith('image/')) return alert('অনুগ্রহ করে ইমেজ ফাইল নির্বাচন করুন!');
+      if (!file || !file.type.startsWith('image/')) {
+        return alert('অনুগ্রহ করে সঠিক ইমেজ ফাইল নির্বাচন করুন!');
+      }
       activeFile = file;
 
-      document.getElementById('fileNameLabel').innerText = file.name;
-      document.getElementById('fileSizeLabel').innerText = `${(file.size / 1024).toFixed(1)} KB`;
-      document.getElementById('checklistContainer').style.display = 'block';
+      try {
+        document.getElementById('fileNameLabel').innerText = file.name;
+        document.getElementById('fileSizeLabel').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+        document.getElementById('checklistContainer').style.display = 'block';
 
-      const inspection = await inspectImageHeaders(file);
-      const checkSynth = document.getElementById('checkSynth');
-      const checkMeta = document.getElementById('checkMeta');
-      const removeBtn = document.getElementById('removeBtn');
+        const inspection = await inspectImageHeaders(file);
+        const checkSynth = document.getElementById('checkSynth');
+        const checkMeta = document.getElementById('checkMeta');
+        const removeBtn = document.getElementById('removeBtn');
 
-      if (!inspection.hasMeta && !inspection.hasSynth) {
-        checkSynth.className = 'check-item status-clean';
-        checkSynth.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <span>কোনো SynthID ওয়াটারমার্ক নেই (সম্পূর্ণ সুরক্ষিত)</span>`;
+        if (!inspection.hasMeta && !inspection.hasSynth) {
+          checkSynth.className = 'check-item status-clean';
+          checkSynth.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <span>কোনো SynthID ওয়াটারমার্ক নেই (সম্পূর্ণ সুরক্ষিত)</span>`;
 
-        checkMeta.className = 'check-item status-clean';
-        checkMeta.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <span>মেটাডাটা সম্পূর্ণ পরিচ্ছন্ন (C2PA মুক্ত)</span>`;
+          checkMeta.className = 'check-item status-clean';
+          checkMeta.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <span>মেটাডাটা সম্পূর্ণ পরিচ্ছন্ন (C2PA মুক্ত)</span>`;
 
-        removeBtn.style.display = 'block';
-        removeBtn.innerText = 'ছবিটি ইতিমধ্যে ক্লিন! (আবার প্রসেস করতে ক্লিক করুন)';
-      } else {
-        checkSynth.className = 'check-item status-found';
-        checkSynth.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>AI SynthID ফ্রিকোয়েন্সি প্যাটার্ন শনাক্ত হয়েছে</span>`;
+          removeBtn.style.display = 'block';
+          removeBtn.disabled = false;
+          removeBtn.innerText = 'ছবিটি ইতিমধ্যে ক্লিন! (আবার প্রসেস করতে ক্লিক করুন)';
+        } else {
+          checkSynth.className = 'check-item status-found';
+          checkSynth.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>AI SynthID ফ্রিকোয়েন্সি প্যাটার্ন শনাক্ত হয়েছে</span>`;
 
-        checkMeta.className = 'check-item status-found';
-        checkMeta.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>ডিজিটাল C2PA ও জেনারেটিভ মেটাডাটা উপস্থিত</span>`;
+          checkMeta.className = 'check-item status-found';
+          checkMeta.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>ডিজিটাল C2PA ও জেনারেটিভ মেটাডাটা উপস্থিত</span>`;
 
-        removeBtn.style.display = 'block';
-        removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
+          removeBtn.style.display = 'block';
+          removeBtn.disabled = false;
+          removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
+        }
+      } catch (err) {
+        document.getElementById('removeBtn').style.display = 'block';
+        document.getElementById('removeBtn').disabled = false;
       }
     }
 
@@ -921,61 +933,78 @@
       removeBtn.disabled = true;
       removeBtn.innerText = 'প্রসেসিং হচ্ছে...';
 
-      const cleanedBlob = await cleanImageCanvas(activeFile);
-      const downloadUrl = URL.createObjectURL(cleanedBlob);
-      createdUrls.push(downloadUrl);
+      try {
+        const cleanedBlob = await cleanImageCanvas(activeFile);
+        const downloadUrl = URL.createObjectURL(cleanedBlob);
+        createdUrls.push(downloadUrl);
 
-      document.getElementById('resultImagePreview').src = downloadUrl;
-      const dlBtn = document.getElementById('downloadButton');
-      dlBtn.href = downloadUrl;
-      dlBtn.download = `clean_${activeFile.name.split('.')[0]}.jpg`;
+        document.getElementById('resultImagePreview').src = downloadUrl;
+        const dlBtn = document.getElementById('downloadButton');
+        dlBtn.href = downloadUrl;
+        dlBtn.download = `clean_${activeFile.name.split('.')[0]}.jpg`;
 
-      if (currentUser.plan !== 'unlimited') {
-        currentUser.credits--;
-        updateCreditDisplay();
-        try {
-          await fetch(`${API_BASE_URL}/api/use-credit`, {
+        // বাটন সক্রিয় করা এবং সাথে সাথে রেজাল্ট পেজে যাওয়া (কোনো আটকে থাকা নেই)
+        removeBtn.disabled = false;
+        removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
+        switchView('view-result');
+
+        // ক্রেডিট ব্যবহারের তথ্য ব্যাকগ্রাউন্ডে পাঠানো
+        if (currentUser.plan !== 'unlimited') {
+          currentUser.credits--;
+          updateCreditDisplay();
+          fetch(`${API_BASE_URL}/api/use-credit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deviceHash: currentUser.deviceHash })
-          });
-        } catch (e) {}
-      }
+          }).catch(e => console.log('Offline mode'));
+        }
 
-      removeBtn.disabled = false;
-      removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
-      switchView('view-result');
+      } catch (err) {
+        alert('ছবিটি প্রসেস করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+        removeBtn.disabled = false;
+        removeBtn.innerText = 'সিম্পল আইডি রিমুভ করুন';
+      }
     }
 
     function cleanImageCanvas(file) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const temp = URL.createObjectURL(file);
         const img = new Image();
         img.src = temp;
+
         img.onload = () => {
-          URL.revokeObjectURL(temp); // মেমোরি রিলিজ
+          URL.revokeObjectURL(temp);
 
-          const canvas = document.getElementById('cleanCanvas');
-          const ctx = canvas.getContext('2d');
+          try {
+            const canvas = document.getElementById('cleanCanvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-          // মাইক্রো ক্রপ (৪ পিক্সেল)
-          canvas.width = img.width - 4;
-          canvas.height = img.height - 4;
-          ctx.drawImage(img, 2, 2, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+            canvas.width = Math.max(1, img.width - 4);
+            canvas.height = Math.max(1, img.height - 4);
+            ctx.drawImage(img, 2, 2, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
 
-          // সুক্ষ্ম অ্যান্টি-ডিটেকশন নয়েজ
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const d = imgData.data;
-          for (let i = 0; i < d.length; i += 4) {
-            const noise = (Math.random() - 0.5) * 3.8;
-            d[i] = Math.min(255, Math.max(0, d[i] + noise));
-            d[i+1] = Math.min(255, Math.max(0, d[i+1] + noise));
-            d[i+2] = Math.min(255, Math.max(0, d[i+2] + noise));
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = imgData.data;
+            const step = d.length > 5000000 ? 12 : 4; // বড় ছবিতে মোবাইল র‍্যাম সুরক্ষা
+            for (let i = 0; i < d.length; i += step) {
+              const noise = (Math.random() - 0.5) * 3.5;
+              d[i] = Math.min(255, Math.max(0, d[i] + noise));
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Canvas export failed'));
+            }, 'image/jpeg', 0.95);
+
+          } catch (e) {
+            reject(e);
           }
-          ctx.putImageData(imgData, 0, 0);
+        };
 
-          // জিরো মেটাডাটা সহ ফ্রেশ JPEG এক্সপোর্ট
-          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.96);
+        img.onerror = () => {
+          URL.revokeObjectURL(temp);
+          reject(new Error('Image decode error'));
         };
       });
     }
@@ -983,9 +1012,9 @@
     // ৬. নেভিগেশন ও স্টেট ম্যানেজমেন্ট
     function switchView(viewId, saveState = true) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-      document.getElementById(viewId).classList.add('active');
+      const targetView = document.getElementById(viewId);
+      if (targetView) targetView.classList.add('active');
 
-      // পেমেন্ট পেজে থাকলে লোকাল স্টোরেজে সেভ রাখা (রিফ্রেশেও না হারানো)
       if (viewId === 'view-payment' && saveState) {
         localStorage.setItem('__active_view', 'view-payment');
         localStorage.setItem('__saved_plan', JSON.stringify(selectedPlanData));
@@ -995,7 +1024,7 @@
         createdUrls.forEach(u => URL.revokeObjectURL(u));
         createdUrls = [];
         activeFile = null;
-        fileInput.value = '';
+        if (fileInput) fileInput.value = '';
         document.getElementById('checklistContainer').style.display = 'none';
         document.getElementById('removeBtn').style.display = 'none';
         checkPendingStatus();
@@ -1009,7 +1038,6 @@
       switchView('view-payment');
     }
 
-    // পেমেন্ট পেজ ম্যানুয়ালি বাতিল করে বের হওয়া
     function cancelPaymentAndExit() {
       localStorage.removeItem('__active_view');
       localStorage.removeItem('__saved_plan');
@@ -1022,7 +1050,6 @@
       document.getElementById('methodNagad').classList.toggle('selected', method === 'nagad');
     }
 
-    // নম্বর কপি অ্যালার্ট
     function copyNumber() {
       navigator.clipboard.writeText("01797995219");
       alert("নম্বর কপি হয়েছে: 01797995219");
@@ -1034,12 +1061,11 @@
       alert("আপনার রেফারেল লিংক কপি হয়েছে! বন্ধুদের সাথে শেয়ার করুন।");
     }
 
-    // ৭. পেমেন্ট ফর্ম সাবমিশন (রেট লিমিট যুক্ত)
+    // ৭. পেমেন্ট সাবমিশন (৬০ সেকেন্ড রেট লিমিট সহ)
     async function submitPaymentForm() {
-      // ৬০ সেকেন্ডের রেট লিমিটেশন চেক
       const lastSubmitTime = localStorage.getItem('__last_payment_submit');
       const now = Date.now();
-      const cooldownPeriod = 60 * 1000; // ৬০ সেকেন্ড
+      const cooldownPeriod = 60 * 1000;
 
       if (lastSubmitTime && (now - lastSubmitTime < cooldownPeriod)) {
         const remainingSeconds = Math.ceil((cooldownPeriod - (now - lastSubmitTime)) / 1000);
@@ -1069,10 +1095,7 @@
 
         const data = await res.json();
         if (data.success) {
-          // রেট লিমিটের সময় রেকর্ড করা
           localStorage.setItem('__last_payment_submit', Date.now());
-
-          // পেন্ডিং স্টেট সংরক্ষণ ও পেমেন্ট পেজ আনলক করা
           localStorage.setItem('__pending_payment', JSON.stringify({
             planLabel: selectedPlanData.label,
             amount: selectedPlanData.amount
@@ -1092,7 +1115,7 @@
       }
     }
 
-    // ৮. সিকিউর অ্যাডমিন অথেনটিকেশন ও অ্যাকশন (SQL Injection Safe)
+    // ৮. সিকিউর অ্যাডমিন অথেনটিকেশন ও অ্যাকশন
     async function verifyAdminLogin() {
       const pass = document.getElementById('adminPassInput').value.trim();
       if (!pass) return alert("পাসওয়ার্ড লিখুন!");
